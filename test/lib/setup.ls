@@ -1,7 +1,8 @@
 require! {
     fs
     chai
-    puppeteer
+    puppeteer: puppeteerCh
+    'puppeteer-firefox': puppeteerFF
     pixelmatch
     pngjs: { PNG }
 }
@@ -11,36 +12,49 @@ chai.use require 'chai-as-promised'
 global.expect = chai.expect
 global.test = it                # because livescript sees "it" as reserved variable
 
-global.page = undefined         # used to make screenshots
+global.pageCh = undefined         # used to make screenshots
+global.pageFF = undefined
 
 
-var browser
+var browserCh, browserFF
 
 before !->>
-    browser := await puppeteer.launch {
+    browserCh := await puppeteerCh.launch {
         devtools: false
         dumpio: false
         args: ['--no-sandbox', '--disable-setuid-sandbox']
         defaultViewport: { width: 1000, height: 0, deviceScaleFactor: 2 }
     }
 
-    global.page = (await browser.pages!).0              # there is always one page available
+    browserFF := await puppeteerFF.launch!
 
-    page.on 'console', (msg) ->
+    global.pageCh = (await browserCh.pages!).0              # there is always one page available
+    global.pageFF = await browserFF.newPage!
+
+    # console.log pageFF
+
+    pageCh.on 'console', (msg) ->
+        if msg._type == 'error'
+            console.error msg._text
+
+    pageFF.on 'console', (msg) ->
         if msg._type == 'error'
             console.error msg._text
 
 
 after !->>
-    await browser.close!
+    await browserCh.close!
+    await browserFF.close!
 
 
 # take screenshot of current page
-global.takeScreenshot = (filename) !->>
+global.takeScreenshot = (page, filename) !->>
+    console.log("about to take it...")
     await page.screenshot {
         omitBackground: true
         path: filename + '.new.png'
     }
+    console.log("done.", t)
 
     if fs.existsSync filename + '.png'
         # now compare the screenshots and delete the new one if they match

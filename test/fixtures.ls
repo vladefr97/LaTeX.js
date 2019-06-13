@@ -4,7 +4,7 @@ require! {
     path
     fs
     he
-    slugify
+    slugify: slify
 }
 
 const HtmlGenerator   = require '../dist/html-generator' .HtmlGenerator
@@ -15,12 +15,17 @@ const decache         = require 'decache'
 const registerWindow  = require '@svgdotjs/svg.js' .registerWindow
 
 
+function slugify(text)
+    slify text, { remove: /[*+~()'"!:@,{}\\]/g }
+
+
 subdirs = []
 
 describe 'LaTeX.js fixtures', !->
     before !->>
         # set the base url for the screenshots so that CSS and fonts are found
-        await page.goto "file://" + process.cwd! + "/dist"
+        await pageCh.goto "file://" + process.cwd! + "/dist"
+        await pageFF.goto "file://" + process.cwd! + "/dist"
 
     const fixtures-path = path.join __dirname, 'fixtures'
 
@@ -92,11 +97,21 @@ function run-fixture (fixture, name)
 
     # create screenshot test
     if screenshot
-        _test '   - screenshot', ->>
-            html = latexjs.parse fixture.source, { generator: new HtmlGenerator { hyphenate: false } } .htmlDocument!.outerHTML
-            await page.setContent html
-            await page.addStyleTag content: ".body { border: .4px solid; height: max-content; }"
+        html = latexjs.parse fixture.source, { generator: new HtmlGenerator { hyphenate: false } } .htmlDocument!.outerHTML
+        filename = path.join __dirname, 'screenshots', slugify(name + ' ' + fixture.header)
 
-            filename = path.join __dirname, 'screenshots', slugify(name + ' ' + fixture.header, { remove: /[*+~()'"!:@,{}\\]/g })
+        _test '   - screenshot (Chrome)', ->>
+            await pageCh.setContent html
+            await pageCh.addStyleTag content: "body { overflow-x: hidden } .body { border: .4px solid; height: max-content; }"
 
-            takeScreenshot filename
+            takeScreenshot pageCh, filename + '.ch'
+
+        _test '   - screenshot (Firefox)', ->>
+            console.log "ff start"
+            # await pageFF.setContent html
+            # await pageFF.goto "http://www.kde.org"
+            console.log "ff content set"
+            # await pageFF.addStyleTag content: "body { overflow-x: hidden } .body { border: .4px solid; height: max-content; }"
+            console.log "ff style added"
+
+            takeScreenshot pageFF, filename + '.ff'

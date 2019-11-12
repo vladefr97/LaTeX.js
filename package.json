@@ -52,7 +52,7 @@
   "devDependencies": {
     "he": "1.2.x",
     "katex": "0.10.0",
-    "@svgdotjs/svg.js": "3.x",
+    "@svgdotjs/svg.js": "^3.0.16",
     "hypher": "0.x",
     "lodash": "4.x",
     "livescript": "https://github.com/michael-brade/LiveScript",
